@@ -3,24 +3,45 @@ Data Sentinel API with Firebase Integration
 This version verifies user identity using Firebase ID tokens.
 Useful for integration with React Native apps using Firebase Authentication.
 """
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask import Flask, request, jsonify
 import firebase_admin
 from firebase_admin import credentials, auth
-from flask import Flask, request, jsonify
 import os
 import random
+import hashlib
 
 # Step 1: Create a Flask web application
-
 app = Flask(__name__)
 
-# Step 2: Set up Firebase Admin SDK
+# Step 3: Set up Firebase Admin SDK
 # The app looks for your Firebase service account JSON key file.
 # You can either set the environment variable or place the file as 'firebase_credentials.json' in the project.
-cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "firebase_credentials.json")
+cred_path = "C:\Users\sbosh\Data-Sentinel\firebase_credentials.json"
+print("File exists:", os.path.exists(cred_path))
 cred = credentials.Certificate(cred_path)
-firebase_admin.initialize_app(cred)
 
-# Step 3: Define a helper function to verify the Firebase token
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+
+# Step 2: Set up rate limiter
+def get_uid_or_ip():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return get_remote_address()
+
+    token = auth_header.replace("Bearer", "").strip()
+    user = verify_firebase_token(token)
+    return user["uid"] if user else get_remote_address()
+
+limiter = Limiter(
+    key_func=get_uid_or_ip,
+    app=app,
+    default_limits=["100 per hour"]
+)
+
+# Step 5: Define a helper function to verify the Firebase token
 def verify_firebase_token(token):
     """
     Verifies the Firebase ID token received from the mobile app.
@@ -31,6 +52,12 @@ def verify_firebase_token(token):
         return decoded_token
     except Exception as e:
         return None
+
+def hash_uid(uid):
+    """
+    Returns SHA-256 hash of the UID for user anonymity
+    """
+    return hashlib.sha256(uid.encode()).hexdigest()
 
 # Step 4: Simulate AI-based request validation
 def is_request_suspicious(request_data):
@@ -43,6 +70,7 @@ def is_request_suspicious(request_data):
 
 # Step 5: Define the /validate route to protect API access
 @app.route("/validate", methods=["POST"])
+@limiter.limit("5 per minute")
 def validate_client_call():
     """
     This route checks the authenticity of the request.
@@ -56,7 +84,7 @@ def validate_client_call():
         return jsonify({"error": "Missing Authorization header"}), 401
 
     # Remove the "Bearer " prefix to extract the actual token
-    token = auth_header.replace("Bearer ", "")
+    token = auth_header.replace("Bearer", "").strip()
     user = verify_firebase_token(token)
 
     # If token is invalid or expired, deny access
@@ -73,9 +101,18 @@ def validate_client_call():
     # If the request is okay, return success
     return jsonify({
         "status": "allowed",
-        "user": user["uid"],
+        "user_hash": hash_uid(user["uid"]),
         "reason": "Request is safe"
     })
+
+# Helper for limiting keying
+def verify_and_get_uid():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return request.remote_addr
+    token = auth_header.replace("Bearer", "").strip()
+    user = verify_firebase_token(token)
+    return user["uid"] if user else request.remote_addr
 
 # Step 6: Add a health check route
 @app.route("/health", methods=["GET"])
