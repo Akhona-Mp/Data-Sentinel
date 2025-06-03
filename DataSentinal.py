@@ -3,14 +3,14 @@ Data Sentinel API with Firebase Integration
 This version verifies user identity using Firebase ID tokens.
 Useful for integration with React Native apps using Firebase Authentication.
 """
-
-from flask import Flask, request, jsonify
 import firebase_admin
 from firebase_admin import credentials, auth
+from flask import Flask, request, jsonify
 import os
 import random
 
 # Step 1: Create a Flask web application
+
 app = Flask(__name__)
 
 # Step 2: Set up Firebase Admin SDK
