@@ -1,20 +1,20 @@
 {
-  "questions": [
+  "Client_Calls": [
     {
-      "question": "hello",
-      "answer": "Yoh"
+      "Client_Call": "hello",
+      "answer": "True"
     },
     {
-      "question": "hi",
-      "answer": "Hello"
+      "Client_Call": "hi",
+      "answer": "True"
     },
     {
-      "question": "Hi",
-      "answer": "/bin/python3 /home/akhona/atm/GameCoded/Data-Sentinel/bot.py"
+      "Client_Call": "Hi",
+      "answer": "False"
     },
     {
-      "question": "what",
-      "answer": "Sbo is a problem"
+      "Client_Call": "what",
+      "answer": "False"
     }
     
   ]
