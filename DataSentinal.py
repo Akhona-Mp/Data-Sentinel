@@ -88,4 +88,6 @@ def health_check():
 
 # Step 7: Start the Flask server
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Enable debug mode only if FLASK_ENV is set to 'development'
+    debug_mode = os.environ.get("FLASK_ENV") == "development"
+    app.run(debug=debug_mode)
