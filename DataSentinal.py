@@ -9,8 +9,20 @@ import firebase_admin
 from firebase_admin import credentials, auth
 import os
 import random
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import json
+from difflib import get_close_matches
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["100 per hour"]
+)
 
 # Step 2: Set up Firebase Admin SDK
 # The app looks for your Firebase service account JSON key file.

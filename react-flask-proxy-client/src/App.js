@@ -1,46 +1,40 @@
 import React, { useState } from 'react';
-import { validateClientCall, healthCheck } from './api/dataSentinelProxy';
 
 function App() {
-    const [clientCall, setClientCall] = useState('');
     const [response, setResponse] = useState(null);
-    const [error, setError] = useState(null);
 
-    const handleValidate = async () => {
-        setError(null);
-        setResponse(null);
+    const checkHealth = async () => {
         try {
-            const result = await validateClientCall(clientCall);
-            setResponse(result);
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    const handleHealthCheck = async () => {
-        setError(null);
-        setResponse(null);
-        try {
-            const result = await healthCheck();
-            setResponse(result);
-        } catch (err) {
-            setError(err.message);
+            const res = await fetch('http://localhost:5000/health');
+            const data = await res.json();
+            setResponse(data);
+        } catch (error) {
+            setResponse({ error: error.message });
         }
     };
 
     return (
-        <div>
-            <h1>Data Sentinel Client</h1>
-            <input
-                type="text"
-                value={clientCall}
-                onChange={(e) => setClientCall(e.target.value)}
-                placeholder="Enter client call"
-            />
-            <button onClick={handleValidate}>Validate Client Call</button>
-            <button onClick={handleHealthCheck}>Health Check</button>
-            {response && <pre>{JSON.stringify(response, null, 2)}</pre>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+        <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+            <h1>Data Sentinel Dashboard</h1>
+            <button 
+                onClick={checkHealth}
+                style={{
+                    padding: '10px 20px',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px'
+                }}
+            >
+                Check API Health
+            </button>
+            {response && (
+                <pre style={{ marginTop: '20px', padding: '10px', backgroundColor: '#f5f5f5' }}>
+                    {JSON.stringify(response, null, 2)}
+                </pre>
+            )}
         </div>
     );
 }
